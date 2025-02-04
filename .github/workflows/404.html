@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Not Found</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: white;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 80px;
+            font-weight: bold;
+            letter-spacing: 5px;
+            animation: glitch 1.5s infinite;
+        }
+        p {
+            font-size: 20px;
+            opacity: 0.8;
+        }
+        .container {
+            margin-top: 100px;
+        }
+        .hidden-game {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        canvas {
+            background: #000;
+            border: 2px solid white;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 5px 5px #ff00ff; }
+            50% { text-shadow: -5px -5px #00ffff; }
+            100% { text-shadow: 5px 5px #ff00ff; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>404</h1>
+        <p>Oops! The page you're looking for doesn't exist.</p>
+        <p>Try typing "<strong>PLAY</strong>" to unlock a surprise. 😉</p>
+    </div>
+
+    <!-- Hidden Game -->
+    <div class="hidden-game" id="gameContainer">
+        <canvas id="gameCanvas" width="400" height="500"></canvas>
+    </div>
+
+    <script>
+        let secretCode = "PLAY"; 
+        let typedKeys = "";
+
+        document.addEventListener("keydown", function(event) {
+            typedKeys += event.key.toUpperCase();
+            if (typedKeys.includes(secretCode)) {
+                document.getElementById("gameContainer").style.display = "block";
+                startGame();
+                typedKeys = ""; // Reset after activation
+            }
+            if (typedKeys.length > secretCode.length) {
+                typedKeys = typedKeys.slice(-secretCode.length);
+            }
+        });
+
+        // Simple Flappy Bird-Style Game
+        function startGame() {
+            let canvas = document.getElementById("gameCanvas");
+            let ctx = canvas.getContext("2d");
+
+            let bird = { x: 50, y: 250, radius: 10, velocity: 0, gravity: 0.5, lift: -10 };
+            let pipes = [];
+            let frame = 0;
+            let score = 0;
+
+            function drawBird() {
+                ctx.beginPath();
+                ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2);
+                ctx.fillStyle = "#ff0";
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            function drawPipes() {
+                ctx.fillStyle = "green";
+                pipes.forEach(pipe => {
+                    ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
+                    ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, pipe.bottomHeight);
+                });
+            }
+
+            function updateGame() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Bird physics
+                bird.velocity += bird.gravity;
+                bird.y += bird.velocity;
+
+                if (bird.y > canvas.height || bird.y < 0) resetGame();
+
+                // Pipe movement
+                if (frame % 90 === 0) {
+                    let gap = 100;
+                    let topHeight = Math.random() * (canvas.height - gap - 100) + 50;
+                    pipes.push({ x: canvas.width, width: 50, topHeight, bottomY: topHeight + gap, bottomHeight: canvas.height - topHeight - gap });
+                }
+
+                pipes.forEach(pipe => {
+                    pipe.x -= 2;
+                    if (pipe.x + pipe.width < 0) {
+                        pipes.shift();
+                        score++;
+                    }
+                    if (bird.x + bird.radius > pipe.x && bird.x - bird.radius < pipe.x + pipe.width &&
+                        (bird.y - bird.radius < pipe.topHeight || bird.y + bird.radius > pipe.bottomY)) {
+                        resetGame();
+                    }
+                });
+
+                drawPipes();
+                drawBird();
+                requestAnimationFrame(updateGame);
+                frame++;
+            }
+
+            function resetGame() {
+                bird.y = 250;
+                bird.velocity = 0;
+                pipes = [];
+                frame = 0;
+                score = 0;
+            }
+
+            document.addEventListener("keydown", () => bird.velocity = bird.lift);
+            updateGame();
+        }
+    </script>
+
+</body>
+</html>
